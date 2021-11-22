@@ -1,0 +1,5 @@
+$(function (){
+    $("#FormInput").validate({
+        
+    })
+});

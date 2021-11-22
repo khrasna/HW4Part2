@@ -1,0 +1,244 @@
+var tabs;
+
+$(function () {
+    $("#tabs").tabs();
+
+    $("#slider-1").slider({
+        min: -50, //initialize the four sliders to set the values of their respective input boxes
+        max: 50,
+        slide: function (event, ui) {
+            $('input[name="MultiplierStart"]').val(ui.value);
+        }
+    });
+    $("#slider-2").slider({
+        min: -50,
+        max: 50,
+        slide: function (event, ui) {
+            $('input[name="MultiplierFinish"]').val(ui.value);
+        }
+    });
+    $("#slider-3").slider({
+        min: -50,
+        max: 50,
+        slide: function (event, ui) {
+            $('input[name="MultiplicandStart"]').val(ui.value);
+        }
+    });
+    $("#slider-4").slider({
+        min: -50,
+        max: 50,
+        slide: function (event, ui) {
+            $('input[name="MultiplicandFinish"]').val(ui.value);
+        }
+    });
+
+    $('input[name="MultiplierStart"]').on('keyup', function () { //if the input boxes values are changed, set the slider to that value
+        $("#slider-1").slider("option", "value", $('input[name="MultiplierStart"]').val());
+    });
+
+    $('input[name="MultiplierFinish"]').on('keyup', function () {
+        $("#slider-2").slider("option", "value", $('input[name="MultiplierFinish"]').val());
+    });
+
+    $('input[name="MultiplicandStart"]').on('keyup', function () {
+        $("#slider-3").slider("option", "value", $('input[name="MultiplicandStart"]').val());
+    });
+
+    $('input[name="MultiplicandFinish"]').on('keyup', function () {
+        $("#slider-4").slider("option", "value", $('input[name="MultiplicandFinish"]').val());
+    });
+
+
+    $.validator.addMethod("less", function (value, element, params) {
+        if (params[0].value == "") {
+            return true; // dont want it to say that the start has to be greater than finish if no finish given. instead it will say to give finish value in other error
+        } else {
+            return this.optional(element) || +value <= +params[0].value;
+
+        } //checks to make sure that the starts are less than the finishes, learned from
+    }); // https://jqueryvalidation.org/jQuery.validator.addMethod/
+
+    $.validator.addMethod("checkval", function (value, element) {
+        if (value == "") {
+            return true; // dont want it to say that the start has to be greater than finish if no finish given. instead it will say to give finish value in other error
+        } else {
+            return this.optional(element) || +value > 1;
+
+        } //checks to make sure that the starts are less than the finishes, learned from
+    });
+
+
+    $("#FormInput").validate({
+        onkeyup: false, //this makes it so the validator doesnt update the error messages whenever new input is typed. only validates when submit is hit.
+        onfocusout: false, //learned about onkeyup, and onfocusout at https://www.sitepoint.com/jquery-validation-validate-form-submit/
+        rules: {
+            MultiplierStart: {
+                digits: true,
+                range: [-50, 50],
+                less: $('input[name="MultiplierFinish"]'),
+                required: true
+
+            },
+            MultiplierFinish: { //rules for form input. makes sure the numbers are in range, and that the fields have input in them.
+                digits: true,
+                required: true,
+                range: [-50, 50]
+            },
+
+            MultiplicandStart: {
+                digits: true,
+                range: [-50, 50],
+                less: $('input[name="MultiplicandFinish"]'),
+                required: true
+            },
+
+            MultiplicandFinish: {
+                digits: true,
+                range: [-50, 50],
+                required: true
+            }
+        },
+
+        messages: {
+            MultiplierStart: {
+                digits: "Multiplier Start must consist of only digits",
+                required: "Multiplier Start must be a digit between -50 and 50",
+                range: "The range of Multiplier Start must stay within -50 and 50",
+                less: "The value of Multiplier Start must be less than or equal to Multiplier Finish."
+            },
+
+            MultiplierFinish: {
+                digits: "Multiplier Finish must consist of only digits",
+                required: "Multiplier Finish must be a digit between -50 and 50",
+                range: "The range of Multiplier Finish must stay within -50 and 50",
+            },
+
+            MultiplicandStart: {
+                digits: "Multiplicand Start must consist of only digits",
+                required: "Multiplicand Start must be a digit between -50 and 50",
+                range: "The range of Multiplicand Start must stay within -50 and 50",
+                less: "The value of Multiplicand Start must be less than or equal to Multiplicand Finish."
+            },
+
+            MultiplicandFinish: {
+                digits: "Multiplicand Finish must consist of only digits",
+                required: "Multiplicand Finish must be a digit between -50 and 50",
+                range: "The range of Multiplicand Finish must stay within -50 and 50",
+            }
+
+
+        },
+
+        errorPlacement: function (error, element) {
+            $(error).appendTo($(('#FormInput'))); //place the errors below the form
+        },
+        errorElement: "p"
+
+    });
+
+
+    $('input[type="submit"]').on('click', function () { //check if form is valid and process table if true
+        $('input[name="clearinput"]').rules('remove');
+        if ($("#FormInput").valid()) {
+            process();
+        }
+    });
+
+
+
+    $('input[name="clear"]').on("click", function () { //clear all tabs except main tab
+        for (var i = 2; i <= tabs; i++) {
+            $("#tabs").find("li:not(:first)").remove();
+            $("#tabs").tabs('refresh');
+        }
+        tabs = 1;
+    });
+
+    $('input[name="clearx"]').on("click", function () { //clear a specified tab with a range of 2 - number of tabs
+        console.log(tabs);
+        console.log($("#FormInput").validate().settings.rules);
+        $('input[name="clearinput"]').rules('add', {
+            digits: true,
+            required: true,
+            range: [2, tabs],
+            checkval: true,
+
+            messages: {
+                digits: "Please make your specified tab to be deleted contain only numbers within the indicated range.",
+                range: "Please choose a tab between 2 and " + tabs,
+                checkval: "Please enter a tab value which is greater than 1.",
+                required: "Please enter a value for the Delete Specified Tab value."
+            }
+        });
+
+        if ($('input[name="clearinput"]').valid()) { //if the specified tab to be removed is valid then remove it
+            var removetab = $('input[name="clearinput"]').val();
+            $("#tabs").find("li:nth-child(" + removetab + ")").remove();
+            $("#tabs").tabs('refresh');
+
+            if (tabs > 1) {
+                tabs -= 1;
+            }
+        }
+
+    })
+
+});
+
+function process() {
+    var multStart = $('input[name="MultiplierStart"]').val();
+    var multFinish = $('input[name="MultiplierFinish"]').val();
+    var multiplicandStart = $('input[name="MultiplicandStart"]').val();
+    var multiplicandFinish = $('input[name="MultiplicandFinish"]').val();
+
+    //clear old table and create a table with size based on input given
+    const rowVals = [];
+    const colVals = []; //these will hold the values of the multiplier and multiplicand
+    var rows = multFinish - multStart;
+    var cols = multiplicandFinish - multiplicandStart;
+    tabs = $("#tabs ul li").length + 1; //number of tabs, learned from https://stackoverflow.com/questions/14702631/in-jquery-ui-1-9-how-do-you-create-new-tabs-dynamically
+    for (var i = 0; i <= cols; i++) {
+        colVals[i] = (+multiplicandStart + +i); //save the values of the numbers being multiplied
+    }
+    for (var i = 0; i <= rows; i++) {
+        rowVals[i] = (+multStart + +i);
+    }
+    var table = createTable(rows, cols, rowVals, colVals); //create table based on total rows and cols, and top and left are the sets of multipliers and multiplicands
+    table.id = "multTable";
+    //adds list item to tab list with parameters as title
+    $("#tabs ul").append("<li><a href='#tab" + tabs + "'>" + multStart + " " + multFinish + " " + multiplicandStart + " " + multiplicandFinish + "</a></li>");
+    $("#tabs").append("<div id='tab" + tabs + "'></div>"); //also learned from https://stackoverflow.com/questions/14702631/in-jquery-ui-1-9-how-do-you-create-new-tabs-dynamically
+    $("#tab" + tabs).append(table); //adds the table to a new tab
+    $("#tabs").tabs("refresh");
+
+}
+
+function createTable(rows, cols, rowVals, colVals) {
+    var t = document.createElement('table');
+    for (var x = 0; x <= rows + 1; x++) { // rows and cols + 1 to indicate ranges of numbers
+        var r = document.createElement('tr');
+        t.appendChild(r);
+        for (var y = 0; y <= cols + 1; y++) { //creates the cols of the table row by row
+            if (y == 0) {
+                var c = document.createElement('th'); //create and insert element based on position in table
+                c.id = "topHeader";
+                if (x != 0) {
+                    c.innerHTML = rowVals[x - 1]; // - 1 because it is moved over 1 to the right
+                }
+            } else if (x == 0) {
+                var c = document.createElement('th');
+                if (y != 0) {
+                    c.innerHTML = colVals[y - 1];
+                }
+            } else {
+                var c = document.createElement('td');
+                c.innerHTML = rowVals[x - 1] * colVals[y - 1];
+                if (((y % 2) + (x % 2)) == 0 || ((y % 2) + (x % 2)) == 2) { // checker board effect
+                    c.style.backgroundColor = "gray";
+                }
+            }
+            r.appendChild(c);
+        }
+    }
+    return t;
+}
